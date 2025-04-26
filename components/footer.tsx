@@ -3,120 +3,65 @@ import { Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin } from "luci
 
 export function Footer() {
   return (
-    <footer className="bg-gray-100 border-t">
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          <div>
-            <Link href="/" className="flex items-center space-x-2 mb-4">
-              <span className="text-2xl font-bold text-orange-500">123</span>
-              <span className="text-2xl font-bold text-green-500">doc</span>
-            </Link>
-            <p className="text-gray-600 mb-4">
-              Nền tảng chia sẻ và bán tài liệu học tập hàng đầu Việt Nam với hàng triệu tài liệu chất lượng cao.
-            </p>
-            <div className="flex space-x-4">
-              <a href="#" className="text-gray-600 hover:text-green-500">
-                <Facebook className="h-5 w-5" />
-                <span className="sr-only">Facebook</span>
-              </a>
-              <a href="#" className="text-gray-600 hover:text-green-500">
-                <Twitter className="h-5 w-5" />
-                <span className="sr-only">Twitter</span>
-              </a>
-              <a href="#" className="text-gray-600 hover:text-green-500">
-                <Instagram className="h-5 w-5" />
-                <span className="sr-only">Instagram</span>
-              </a>
-              <a href="#" className="text-gray-600 hover:text-green-500">
-                <Youtube className="h-5 w-5" />
-                <span className="sr-only">Youtube</span>
-              </a>
-            </div>
-          </div>
-          <div>
-            <h3 className="font-bold text-lg mb-4">Liên kết nhanh</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link href="/about" className="text-gray-600 hover:text-green-500">
-                  Giới thiệu
-                </Link>
+    <footer className="bg-white border-t">
+      <div className="container mx-auto px-4 pt-12 pb-4">
+        {/* Logo 123doc ở trên, căn giữa */}
+        <div className="flex justify-center mb-8">
+          <span className="text-4xl font-bold italic">
+            <span className="text-orange-500">123</span>
+            <span className="text-green-500">doc</span>
+          </span>
+        </div>
+        {/* 3 cột nội dung */}
+        <div className="max-w-4xl mx-auto flex flex-col md:flex-row md:justify-between md:items-start text-center md:text-left gap-8">
+          {/* Hỗ trợ khách hàng */}
+          <div className="flex-1 mb-8 md:mb-0">
+            <h3 className="font-bold text-gray-500 mb-4 uppercase">Hỗ trợ khách hàng</h3>
+            <ul className="space-y-3">
+              <li className="flex items-center justify-center md:justify-start">
+                <Mail className="h-5 w-5 text-green-500 mr-2" />
+                <span className="text-gray-600">info@123doc.org</span>
               </li>
-              <li>
-                <Link href="/terms" className="text-gray-600 hover:text-green-500">
-                  Điều khoản sử dụng
-                </Link>
+              <li className="flex items-center justify-center md:justify-start">
+                <svg className="h-5 w-5 mr-2" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#6001d2"/><path fill="#fff" d="M23.1 21.6c-.3-.2-1.7-.8-2-1-1.1-.4-1.3-.6-1.8.3-.2.3-.7 1-1 1.2-.2.1-.5.1-.8-.1-.2-.1-.9-.3-1.7-1-.6-.5-1-1.1-1.1-1.3-.1-.2 0-.5.1-.6.1-.1.2-.3.4-.5.1-.2.2-.3.3-.5.1-.2.1-.4 0-.6-.1-.2-.8-2-1.1-2.7-.3-.7-.6-.6-.8-.6h-.6c-.2 0-.5.1-.7.3-.2.2-1 1-1 2.4 0 1.4 1 2.7 1.1 2.9.1.2 2.1 3.2 5.1 4.1.7.2 1.2.3 1.6.3.7 0 1.3-.3 1.5-.7.2-.4.2-1.1.1-1.2z"/></svg>
+                <span className="text-gray-600">Yahoo</span>
               </li>
-              <li>
-                <Link href="/privacy" className="text-gray-600 hover:text-green-500">
-                  Chính sách bảo mật
-                </Link>
-              </li>
-              <li>
-                <Link href="/faq" className="text-gray-600 hover:text-green-500">
-                  Câu hỏi thường gặp
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="text-gray-600 hover:text-green-500">
-                  Liên hệ
-                </Link>
+              <li className="flex items-center justify-center md:justify-start">
+                <svg className="h-5 w-5 mr-2" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#00aff0"/><path fill="#fff" d="M23.5 20.7c-.3-.2-1.7-.8-2-1-1.1-.4-1.3-.6-1.8.3-.2.3-.7 1-1 1.2-.2.1-.5.1-.8-.1-.2-.1-.9-.3-1.7-1-.6-.5-1-1.1-1.1-1.3-.1-.2 0-.5.1-.6.1-.1.2-.3.4-.5.1-.2.2-.3.3-.5.1-.2.1-.4 0-.6-.1-.2-.8-2-1.1-2.7-.3-.7-.6-.6-.8-.6h-.6c-.2 0-.5.1-.7.3-.2.2-1 1-1 2.4 0 1.4 1 2.7 1.1 2.9.1.2 2.1 3.2 5.1 4.1.7.2 1.2.3 1.6.3.7 0 1.3-.3 1.5-.7.2-.4.2-1.1.1-1.2z"/></svg>
+                <span className="text-gray-600">Skype</span>
               </li>
             </ul>
           </div>
-          <div>
-            <h3 className="font-bold text-lg mb-4">Danh mục</h3>
-            <ul className="space-y-2">
+          {/* Giúp đỡ */}
+          <div className="flex-1 mb-8 md:mb-0">
+            <h3 className="font-bold text-gray-500 mb-4 uppercase">Giúp đỡ</h3>
+            <ul className="space-y-3">
               <li>
-                <Link href="/category/de-thi" className="text-gray-600 hover:text-green-500">
-                  Đề thi & Kiểm tra
-                </Link>
+                <Link href="#" className="text-gray-600 hover:text-green-500">Câu hỏi thường gặp</Link>
               </li>
               <li>
-                <Link href="/category/luan-van" className="text-gray-600 hover:text-green-500">
-                  Luận văn & Báo cáo
-                </Link>
+                <Link href="#" className="text-gray-600 hover:text-green-500">Điều khoản sử dụng</Link>
               </li>
               <li>
-                <Link href="/category/bai-giang" className="text-gray-600 hover:text-green-500">
-                  Bài giảng & Slide
-                </Link>
+                <Link href="#" className="text-gray-600 hover:text-green-500">Quy định chính sách bán tài liệu</Link>
               </li>
               <li>
-                <Link href="/category/giao-trinh" className="text-gray-600 hover:text-green-500">
-                  Giáo trình
-                </Link>
-              </li>
-              <li>
-                <Link href="/category/bieu-mau" className="text-gray-600 hover:text-green-500">
-                  Biểu mẫu & Hợp đồng
-                </Link>
+                <Link href="#" className="text-gray-600 hover:text-green-500">Hướng dẫn thanh toán</Link>
               </li>
             </ul>
           </div>
-          <div>
-            <h3 className="font-bold text-lg mb-4">Liên hệ</h3>
-            <ul className="space-y-4">
-              <li className="flex items-start">
-                <MapPin className="h-5 w-5 mr-2 text-green-500 shrink-0 mt-0.5" />
-                <span className="text-gray-600">Tòa nhà 123Doc, Số 123 Đường ABC, Quận XYZ, Hà Nội</span>
-              </li>
-              <li className="flex items-center">
-                <Phone className="h-5 w-5 mr-2 text-green-500" />
-                <a href="tel:+84123456789" className="text-gray-600 hover:text-green-500">
-                  (84) 123 456 789
-                </a>
-              </li>
-              <li className="flex items-center">
-                <Mail className="h-5 w-5 mr-2 text-green-500" />
-                <a href="mailto:info@123doc.com" className="text-gray-600 hover:text-green-500">
-                  info@123doc.com
-                </a>
+          {/* Giới thiệu */}
+          <div className="flex-1">
+            <h3 className="font-bold text-gray-500 mb-4 uppercase">Giới thiệu</h3>
+            <ul className="space-y-3">
+              <li>
+                <Link href="#" className="text-gray-600 hover:text-green-500">123doc là gì?</Link>
               </li>
             </ul>
           </div>
         </div>
-        <div className="border-t mt-12 pt-8 text-center text-gray-600">
-          <p>© {new Date().getFullYear()} 123Doc. Tất cả các quyền được bảo lưu.</p>
+        <div className="border-t mt-8 pt-4 text-center text-gray-500 text-sm">
+          Copyright © 2020 123DOC. Designed by 123DOC
         </div>
       </div>
     </footer>

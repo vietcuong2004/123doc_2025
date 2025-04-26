@@ -1,23 +1,20 @@
-"use client"
-
-import { useState } from "react"
+import { use } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { Calendar, Download, Eye, Heart, Share2, ShoppingCart, Star, User } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Calendar, Download, Eye, Star, User } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
+import DocumentActions from "./DocumentActions"
 
-export default function DocumentPage({ params }: { params: { id: string } }) {
-  const router = useRouter()
-  const [isLiked, setIsLiked] = useState(false)
+export default function DocumentPage({ params }: { params: Promise<{ id: string }> }) {
+  // Lấy params đã resolve
+  const resolvedParams = use(params)
 
   // Mock data for document
   const document = {
-    id: params.id,
+    id: resolvedParams.id,
     title: "Tuyển chọn những bài luận văn phát triển sản phẩm du lịch mang tính thực tiễn cao",
     description:
       "Tài liệu này tổng hợp các bài luận văn xuất sắc về phát triển sản phẩm du lịch, bao gồm các nghiên cứu thực tiễn, phân tích thị trường và đề xuất chiến lược phát triển sản phẩm du lịch bền vững.",
@@ -256,9 +253,7 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
                       <p className="text-sm text-gray-500">02/05/2024</p>
                     </div>
 
-                    <Button variant="outline" className="w-full">
-                      Xem thêm đánh giá
-                    </Button>
+                    <button className="w-full border rounded px-4 py-2 text-gray-700 hover:bg-gray-50">Xem thêm đánh giá</button>
                   </div>
                 </div>
               </TabsContent>
@@ -302,27 +297,7 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
 
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-sm p-6 sticky top-20">
-              <div className="text-center mb-4">
-                <div className="text-3xl font-bold text-green-500">{document.price.toLocaleString("vi-VN")} VNĐ</div>
-                <p className="text-gray-500">Giá đã bao gồm VAT</p>
-              </div>
-
-              <div className="space-y-4">
-                <Button className="w-full bg-green-500 hover:bg-green-600">
-                  <ShoppingCart className="h-4 w-4 mr-2" />
-                  Mua ngay
-                </Button>
-
-                <Button variant="outline" className="w-full" onClick={() => setIsLiked(!isLiked)}>
-                  <Heart className={`h-4 w-4 mr-2 ${isLiked ? "fill-red-500 text-red-500" : ""}`} />
-                  {isLiked ? "Đã thích" : "Thêm vào yêu thích"}
-                </Button>
-
-                <Button variant="outline" className="w-full">
-                  <Share2 className="h-4 w-4 mr-2" />
-                  Chia sẻ
-                </Button>
-              </div>
+              <DocumentActions price={document.price} />
 
               <Separator className="my-6" />
 
@@ -355,9 +330,7 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
                 <p className="text-sm text-gray-700 mb-2">
                   Nếu bạn có bất kỳ câu hỏi nào về tài liệu này, vui lòng liên hệ với chúng tôi.
                 </p>
-                <Button variant="link" className="text-green-500 hover:text-green-600 p-0 h-auto">
-                  Liên hệ hỗ trợ
-                </Button>
+                <button className="text-green-500 hover:text-green-600 p-0 h-auto underline">Liên hệ hỗ trợ</button>
               </div>
             </div>
           </div>

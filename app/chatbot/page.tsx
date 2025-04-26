@@ -228,24 +228,30 @@ export default function ChatbotPage() {
                         <div className="space-y-2">
                           <Button
                             variant="outline"
-                            className="w-full justify-start text-sm h-auto py-2 px-3"
+                            className="w-full justify-start text-sm h-auto py-2 px-3 break-words text-left whitespace-normal"
                             onClick={() => handleQuickQuestion("Có đề cương ôn thi THPT Quốc gia môn Toán không?")}
                           >
-                            Có đề cương ôn thi THPT Quốc gia môn Toán không?
+                            <span className="break-words whitespace-normal text-left block">
+                              Có đề cương ôn thi THPT Quốc gia môn Toán không?
+                            </span>
                           </Button>
                           <Button
                             variant="outline"
-                            className="w-full justify-start text-sm h-auto py-2 px-3"
+                            className="w-full justify-start text-sm h-auto py-2 px-3 break-words text-left whitespace-normal"
                             onClick={() => handleQuickQuestion("Giúp tôi tìm tài liệu về IELTS Writing Task 2")}
                           >
-                            Giúp tôi tìm tài liệu về IELTS Writing Task 2
+                            <span className="break-words whitespace-normal text-left block">
+                              Giúp tôi tìm tài liệu về IELTS Writing Task 2
+                            </span>
                           </Button>
                           <Button
                             variant="outline"
-                            className="w-full justify-start text-sm h-auto py-2 px-3"
+                            className="w-full justify-start text-sm h-auto py-2 px-3 break-words text-left whitespace-normal"
                             onClick={() => handleQuickQuestion("Hiệu ứng mỏ neo trong hành vi tiêu dùng là gì?")}
                           >
-                            Hiệu ứng mỏ neo trong hành vi tiêu dùng là gì?
+                            <span className="break-words whitespace-normal text-left block">
+                              Hiệu ứng mỏ neo trong hành vi tiêu dùng là gì?
+                            </span>
                           </Button>
                         </div>
                       </div>
@@ -339,7 +345,7 @@ export default function ChatbotPage() {
                                 message.role === "user" ? "bg-green-500 text-white" : "bg-gray-100 text-gray-800"
                               }`}
                             >
-                              <p className="whitespace-pre-line">{message.content}</p>
+                              <p className="whitespace-pre-line break-words">{message.content}</p>
                             </div>
 
                             {message.documents && (

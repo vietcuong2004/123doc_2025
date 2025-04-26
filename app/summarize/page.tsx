@@ -23,6 +23,7 @@ export default function Summarize() {
   const [processingProgress, setProcessingProgress] = useState(0)
   const [summary, setSummary] = useState<string>("")
   const [isAudioPlaying, setIsAudioPlaying] = useState(false)
+  const mindmapImageUrl = "/mindmap-demo.png" // Đường dẫn ảnh sơ đồ tư duy mẫu
 
   const router = useRouter()
 
@@ -290,18 +291,38 @@ export default function Summarize() {
               <CardContent>
                 {summary ? (
                   <div className="space-y-4">
-                    <div className="bg-gray-50 rounded-lg p-4 h-80 overflow-y-auto">
-                      <div className="whitespace-pre-line">{summary}</div>
+                    <div className="bg-gray-50 rounded-lg p-4 h-80 overflow-y-auto flex items-center justify-center">
+                      {summaryType === "outline" ? (
+                        <img src={mindmapImageUrl} alt="Sơ đồ tư duy" className="max-h-72 w-auto mx-auto" />
+                      ) : (
+                        <div className="whitespace-pre-line">{summary}</div>
+                      )}
                     </div>
                     <div className="flex space-x-2">
-                      <Button variant="outline" className="flex-1" onClick={handleCopyToClipboard}>
-                        <Copy className="h-4 w-4 mr-2" />
-                        Sao chép
-                      </Button>
-                      <Button variant="outline" className="flex-1" onClick={handleTextToSpeech}>
-                        <VolumeIcon className="h-4 w-4 mr-2" />
-                        {isAudioPlaying ? "Dừng đọc" : "Đọc to"}
-                      </Button>
+                      {summaryType === "outline" ? (
+                        <a
+                          href={mindmapImageUrl}
+                          download="so-do-tu-duy.png"
+                          className="flex-1 inline-flex items-center justify-center border rounded px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
+                          style={{ textDecoration: "none" }}
+                        >
+                          <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
+                          </svg>
+                          Tải xuống
+                        </a>
+                      ) : (
+                        <Button variant="outline" className="flex-1" onClick={handleCopyToClipboard}>
+                          <Copy className="h-4 w-4 mr-2" />
+                          Sao chép
+                        </Button>
+                      )}
+                      {summaryType !== "outline" && (
+                        <Button variant="outline" className="flex-1" onClick={handleTextToSpeech}>
+                          <VolumeIcon className="h-4 w-4 mr-2" />
+                          {isAudioPlaying ? "Dừng đọc" : "Đọc to"}
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ) : (
