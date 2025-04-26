@@ -1,4 +1,4 @@
-# 123doc 2025 design
+# 123doc design (2025)
 
 *Automatically synced with your [v0.dev](https://v0.dev) deployments*
 
