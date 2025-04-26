@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
@@ -10,28 +10,49 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { LayoutGrid, LayoutList, Search, Filter, FileText, Eye, Download, Star, StarOff, Trash2 } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { LayoutGrid, LayoutList, Search, Filter, FileText, Eye, Download, Star, StarOff, Trash2, Tag, Bell, Plus } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 
 interface Document {
   id: number
   title: string
   type: string
   category: string
+  subject: string
   addedDate: string
   lastOpened?: string
   tags: string[]
   notes?: string
   isFavorite: boolean
   image: string
+  status: "unread" | "in-progress" | "completed"
+}
+
+interface CustomTag {
+  id: number
+  name: string
+  color: string
 }
 
 export default function PersonalLibraryPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [selectedSubject, setSelectedSubject] = useState<string | null>(null)
   const [selectedTag, setSelectedTag] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [newTagName, setNewTagName] = useState("")
+  const [newTagColor, setNewTagColor] = useState("#3b82f6")
+  const [showNewTagDialog, setShowNewTagDialog] = useState(false)
+  const [notifications, setNotifications] = useState<{id: number, message: string, date: string}[]>([])
+
+  const [customTags, setCustomTags] = useState<CustomTag[]>([
+    { id: 1, name: "HK2 - Năm 2", color: "#3b82f6" },
+    { id: 2, name: "Ôn thi giữa kỳ", color: "#10b981" },
+    { id: 3, name: "Bài tập nhóm", color: "#f59e0b" },
+  ])
 
   const [documents, setDocuments] = useState<Document[]>([
     {
@@ -39,676 +60,267 @@ export default function PersonalLibraryPage() {
       title: "Tuyển chọn những bài luận văn phát triển sản phẩm du lịch mang tính thực tiễn cao",
       type: "pdf",
       category: "Luận văn & Báo cáo",
+      subject: "Quản trị học",
       addedDate: "08-05-2024",
       lastOpened: "15-05-2024",
-      tags: ["du lịch", "marketing", "phát triển sản phẩm"],
+      tags: ["du lịch", "marketing", "phát triển sản phẩm", "HK2 - Năm 2"],
       notes: "Tài liệu hay về phát triển sản phẩm du lịch, có nhiều ví dụ thực tế.",
       isFavorite: true,
       image: "/placeholder.svg?height=100&width=150",
+      status: "in-progress"
     },
-    {
-      id: 2,
-      title: "Hướng dẫn làm đồ án hệ thống cung cấp điện cho xưởng cơ khí MỚI NHẤT 2020",
-      type: "docx",
-      category: "Đồ án & Nghiên cứu",
-      addedDate: "07-08-2024",
-      lastOpened: "10-05-2024",
-      tags: ["điện", "cơ khí", "đồ án"],
-      notes: "Tài liệu chi tiết về thiết kế hệ thống điện cho xưởng cơ khí.",
-      isFavorite: false,
-      image: "/placeholder.svg?height=100&width=150",
-    },
-    {
-      id: 3,
-      title: "Top 10 tài liệu trắc nghiệm được lý có đáp án - Top Báo Cáo Thực Tập Tốt Nhất",
-      type: "pdf",
-      category: "Đề thi & Kiểm tra",
-      addedDate: "15-10-2024",
-      lastOpened: "20-05-2024",
-      tags: ["vật lý", "trắc nghiệm", "đề thi"],
-      isFavorite: true,
-      image: "/placeholder.svg?height=100&width=150",
-    },
-    {
-      id: 4,
-      title: "Tổng hợp 10 tài liệu về thực tập động cơ hay nhất - Top Báo Cáo Thực Tập Tốt Nhất",
-      type: "pdf",
-      category: "Báo cáo thực tập",
-      addedDate: "10-03-2024",
-      tags: ["động cơ", "thực tập", "cơ khí"],
-      isFavorite: false,
-      image: "/placeholder.svg?height=100&width=150",
-    },
-    {
-      id: 5,
-      title: "Giáo trình Toán cao cấp",
-      type: "pdf",
-      category: "Giáo trình",
-      addedDate: "15-05-2023",
-      lastOpened: "01-05-2024",
-      tags: ["toán học", "đại học", "giáo trình"],
-      isFavorite: false,
-      image: "/placeholder.svg?height=100&width=150",
-    },
-    {
-      id: 6,
-      title: "Bài tập Vật lý",
-      type: "docx",
-      category: "Bài tập",
-      addedDate: "10-05-2023",
-      lastOpened: "05-05-2024",
-      tags: ["vật lý", "bài tập", "đại học"],
-      isFavorite: false,
-      image: "/placeholder.svg?height=100&width=150",
-    },
+    // ... thêm các tài liệu khác
   ])
 
-  // Get all unique categories
-  const categories = Array.from(new Set(documents.map((doc) => doc.category)))
-
-  // Get all unique tags
-  const allTags = Array.from(new Set(documents.flatMap((doc) => doc.tags)))
-
-  // Filter documents based on search query, category, and tag
-  const filteredDocuments = documents.filter((doc) => {
+  // Lọc tài liệu
+  const filteredDocuments = documents.filter(doc => {
     const matchesSearch = doc.title.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesCategory = selectedCategory ? doc.category === selectedCategory : true
-    const matchesTag = selectedTag ? doc.tags.includes(selectedTag) : true
-    return matchesSearch && matchesCategory && matchesTag
+    const matchesCategory = !selectedCategory || doc.category === selectedCategory
+    const matchesSubject = !selectedSubject || doc.subject === selectedSubject
+    const matchesTag = !selectedTag || doc.tags.includes(selectedTag)
+    return matchesSearch && matchesCategory && matchesSubject && matchesTag
   })
 
-  const toggleFavorite = (id: number) => {
-    setDocuments((prev) => prev.map((doc) => (doc.id === id ? { ...doc, isFavorite: !doc.isFavorite } : doc)))
-  }
-
-  const deleteDocument = (id: number) => {
-    if (confirm("Bạn có chắc chắn muốn xóa tài liệu này?")) {
-      setDocuments((prev) => prev.filter((doc) => doc.id !== id))
+  // Tạo nhãn mới
+  const createNewTag = () => {
+    if (newTagName.trim()) {
+      const newTag: CustomTag = {
+        id: Date.now(),
+        name: newTagName,
+        color: newTagColor
+      }
+      setCustomTags([...customTags, newTag])
+      setNewTagName("")
+      setShowNewTagDialog(false)
     }
   }
 
+  // Kiểm tra và tạo thông báo
+  useEffect(() => {
+    const checkUnreadDocuments = () => {
+      const now = new Date()
+      const unreadDocs = documents.filter(doc => {
+        if (!doc.lastOpened) return true
+        const lastOpened = new Date(doc.lastOpened)
+        const daysSinceLastOpened = (now.getTime() - lastOpened.getTime()) / (1000 * 60 * 60 * 24)
+        return daysSinceLastOpened > 14 // 2 tuần
+      })
+
+      if (unreadDocs.length > 0) {
+        setNotifications([
+          {
+            id: Date.now(),
+            message: `Bạn có ${unreadDocs.length} tài liệu chưa đọc trong 2 tuần qua`,
+            date: new Date().toLocaleDateString()
+          }
+        ])
+      }
+    }
+
+    checkUnreadDocuments()
+    const interval = setInterval(checkUnreadDocuments, 24 * 60 * 60 * 1000) // Kiểm tra mỗi ngày
+    return () => clearInterval(interval)
+  }, [documents])
+
   return (
-    <>
+    <main className="min-h-screen bg-gray-50">
       <Navbar />
       <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold">Thư viện cá nhân</h1>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="icon"
-              className={viewMode === "grid" ? "bg-gray-100" : ""}
-              onClick={() => setViewMode("grid")}
-            >
-              <LayoutGrid className="h-4 w-4" />
-              <span className="sr-only">Grid view</span>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Thư viện cá nhân</h1>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setViewMode("grid")}>
+              <LayoutGrid className="h-4 w-4 mr-2" />
+              Lưới
             </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className={viewMode === "list" ? "bg-gray-100" : ""}
-              onClick={() => setViewMode("list")}
-            >
-              <LayoutList className="h-4 w-4" />
-              <span className="sr-only">List view</span>
-            </Button>
-            <Button variant="outline" onClick={() => setIsFilterOpen(!isFilterOpen)}>
-              <Filter className="h-4 w-4 mr-2" />
-              Bộ lọc
+            <Button variant="outline" onClick={() => setViewMode("list")}>
+              <LayoutList className="h-4 w-4 mr-2" />
+              Danh sách
             </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {/* Filters - Desktop */}
-          {isFilterOpen && (
-            <div className="md:col-span-1">
-              <div className="bg-white rounded-lg shadow-sm p-6 sticky top-20">
-                <h2 className="font-bold text-lg mb-4">Bộ lọc tài liệu</h2>
-
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <h3 className="font-medium">Loại tài liệu</h3>
-                    <div className="space-y-2">
-                      {["pdf", "docx", "pptx", "xlsx"].map((type) => (
-                        <div key={type} className="flex items-center space-x-2">
-                          <Checkbox id={`type-${type}`} />
-                          <Label htmlFor={`type-${type}`} className="text-sm">
-                            {type.toUpperCase()}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <h3 className="font-medium">Danh mục</h3>
-                    <div className="space-y-2">
-                      {categories.map((category) => (
-                        <div key={category} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`category-${category}`}
-                            checked={selectedCategory === category}
-                            onCheckedChange={(checked) => {
-                              setSelectedCategory(checked ? category : null)
-                            }}
-                          />
-                          <Label htmlFor={`category-${category}`} className="text-sm">
-                            {category}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <h3 className="font-medium">Thẻ</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {allTags.map((tag) => (
-                        <Badge
-                          key={tag}
-                          variant={selectedTag === tag ? "default" : "outline"}
-                          className="cursor-pointer"
-                          onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <h3 className="font-medium">Trạng thái</h3>
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox id="status-read" />
-                        <Label htmlFor="status-read" className="text-sm">
-                          Đã đọc
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox id="status-unread" />
-                        <Label htmlFor="status-unread" className="text-sm">
-                          Chưa đọc
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox id="status-favorite" />
-                        <Label htmlFor="status-favorite" className="text-sm">
-                          Yêu thích
-                        </Label>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Button className="w-full bg-green-500 hover:bg-green-600">Áp dụng bộ lọc</Button>
-                </div>
+        {/* Thông báo */}
+        {notifications.length > 0 && (
+          <div className="mb-6">
+            {notifications.map(notification => (
+              <div key={notification.id} className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center">
+                <Bell className="h-5 w-5 text-blue-500 mr-2" />
+                <p className="text-blue-700">{notification.message}</p>
               </div>
-            </div>
-          )}
-
-          {/* Main content */}
-          <div className={`${isFilterOpen ? "md:col-span-3" : "md:col-span-4"}`}>
-            <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
-                <Input
-                  type="search"
-                  placeholder="Tìm kiếm tài liệu..."
-                  className="pl-10"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <Tabs defaultValue="all" className="mb-6">
-              <TabsList>
-                <TabsTrigger value="all">Tất cả tài liệu ({documents.length})</TabsTrigger>
-                <TabsTrigger value="recent">Gần đây</TabsTrigger>
-                <TabsTrigger value="favorites">Yêu thích</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="all" className="mt-4">
-                {viewMode === "grid" ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredDocuments.map((doc) => (
-                      <Card key={doc.id} className="overflow-hidden">
-                        <CardContent className="p-0">
-                          <div className="relative h-40 w-full bg-gray-100 flex items-center justify-center">
-                            {doc.type === "pdf" && <div className="text-red-500 text-4xl font-bold">PDF</div>}
-                            {doc.type === "docx" && <div className="text-blue-500 text-4xl font-bold">DOC</div>}
-                            {doc.type === "pptx" && <div className="text-orange-500 text-4xl font-bold">PPT</div>}
-                            {doc.type === "xlsx" && <div className="text-green-500 text-4xl font-bold">XLS</div>}
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="absolute top-2 right-2"
-                              onClick={() => toggleFavorite(doc.id)}
-                            >
-                              {doc.isFavorite ? (
-                                <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
-                              ) : (
-                                <StarOff className="h-5 w-5 text-gray-400" />
-                              )}
-                            </Button>
-                          </div>
-                          <div className="p-4">
-                            <Link href={`/document/${doc.id}`}>
-                              <h3 className="font-medium line-clamp-2 hover:text-green-500 transition-colors">
-                                {doc.title}
-                              </h3>
-                            </Link>
-                            <p className="text-sm text-gray-500 mt-1">
-                              {doc.category} • Thêm ngày: {doc.addedDate}
-                            </p>
-                            <div className="flex flex-wrap gap-1 mt-2">
-                              {doc.tags.map((tag) => (
-                                <Badge key={tag} variant="outline" className="text-xs">
-                                  {tag}
-                                </Badge>
-                              ))}
-                            </div>
-                            <div className="flex justify-between mt-4">
-                              <Button variant="outline" size="sm">
-                                <Eye className="h-4 w-4 mr-1" />
-                                Xem
-                              </Button>
-                              <Button variant="outline" size="sm">
-                                <Download className="h-4 w-4 mr-1" />
-                                Tải xuống
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-red-500"
-                                onClick={() => deleteDocument(doc.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {filteredDocuments.map((doc) => (
-                      <Card key={doc.id}>
-                        <CardContent className="p-4">
-                          <div className="flex items-center space-x-4">
-                            <div className="h-16 w-16 bg-gray-100 flex items-center justify-center shrink-0 rounded">
-                              {doc.type === "pdf" && <div className="text-red-500 text-xl font-bold">PDF</div>}
-                              {doc.type === "docx" && <div className="text-blue-500 text-xl font-bold">DOC</div>}
-                              {doc.type === "pptx" && <div className="text-orange-500 text-xl font-bold">PPT</div>}
-                              {doc.type === "xlsx" && <div className="text-green-500 text-xl font-bold">XLS</div>}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center">
-                                <Link href={`/document/${doc.id}`} className="flex-1">
-                                  <h3 className="font-medium truncate hover:text-green-500 transition-colors">
-                                    {doc.title}
-                                  </h3>
-                                </Link>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="ml-2"
-                                  onClick={() => toggleFavorite(doc.id)}
-                                >
-                                  {doc.isFavorite ? (
-                                    <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
-                                  ) : (
-                                    <StarOff className="h-5 w-5 text-gray-400" />
-                                  )}
-                                </Button>
-                              </div>
-                              <p className="text-sm text-gray-500">
-                                {doc.category} • Thêm ngày: {doc.addedDate}
-                                {doc.lastOpened && ` • Đọc gần đây: ${doc.lastOpened}`}
-                              </p>
-                              <div className="flex flex-wrap gap-1 mt-2">
-                                {doc.tags.map((tag) => (
-                                  <Badge key={tag} variant="outline" className="text-xs">
-                                    {tag}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                            <div className="flex space-x-2 shrink-0">
-                              <Button variant="outline" size="sm">
-                                <Eye className="h-4 w-4 mr-1" />
-                                Xem
-                              </Button>
-                              <Button variant="outline" size="sm">
-                                <Download className="h-4 w-4 mr-1" />
-                                Tải xuống
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-red-500"
-                                onClick={() => deleteDocument(doc.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-
-                {filteredDocuments.length === 0 && (
-                  <div className="text-center py-12">
-                    <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium mb-2">Không tìm thấy tài liệu</h3>
-                    <p className="text-gray-500">Không có tài liệu nào phù hợp với tiêu chí tìm kiếm của bạn.</p>
-                  </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="recent">
-                {viewMode === "grid" ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredDocuments
-                      .filter((doc) => doc.lastOpened)
-                      .sort((a, b) => new Date(b.lastOpened || "").getTime() - new Date(a.lastOpened || "").getTime())
-                      .slice(0, 6)
-                      .map((doc) => (
-                        <Card key={doc.id} className="overflow-hidden">
-                          <CardContent className="p-0">
-                            <div className="relative h-40 w-full bg-gray-100 flex items-center justify-center">
-                              {doc.type === "pdf" && <div className="text-red-500 text-4xl font-bold">PDF</div>}
-                              {doc.type === "docx" && <div className="text-blue-500 text-4xl font-bold">DOC</div>}
-                              {doc.type === "pptx" && <div className="text-orange-500 text-4xl font-bold">PPT</div>}
-                              {doc.type === "xlsx" && <div className="text-green-500 text-4xl font-bold">XLS</div>}
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="absolute top-2 right-2"
-                                onClick={() => toggleFavorite(doc.id)}
-                              >
-                                {doc.isFavorite ? (
-                                  <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
-                                ) : (
-                                  <StarOff className="h-5 w-5 text-gray-400" />
-                                )}
-                              </Button>
-                            </div>
-                            <div className="p-4">
-                              <Link href={`/document/${doc.id}`}>
-                                <h3 className="font-medium line-clamp-2 hover:text-green-500 transition-colors">
-                                  {doc.title}
-                                </h3>
-                              </Link>
-                              <p className="text-sm text-gray-500 mt-1">
-                                {doc.category} • Đọc gần đây: {doc.lastOpened}
-                              </p>
-                              <div className="flex flex-wrap gap-1 mt-2">
-                                {doc.tags.map((tag) => (
-                                  <Badge key={tag} variant="outline" className="text-xs">
-                                    {tag}
-                                  </Badge>
-                                ))}
-                              </div>
-                              <div className="flex justify-between mt-4">
-                                <Button variant="outline" size="sm">
-                                  <Eye className="h-4 w-4 mr-1" />
-                                  Xem
-                                </Button>
-                                <Button variant="outline" size="sm">
-                                  <Download className="h-4 w-4 mr-1" />
-                                  Tải xuống
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="text-red-500"
-                                  onClick={() => deleteDocument(doc.id)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {filteredDocuments
-                      .filter((doc) => doc.lastOpened)
-                      .sort((a, b) => new Date(b.lastOpened || "").getTime() - new Date(a.lastOpened || "").getTime())
-                      .slice(0, 6)
-                      .map((doc) => (
-                        <Card key={doc.id}>
-                          <CardContent className="p-4">
-                            <div className="flex items-center space-x-4">
-                              <div className="h-16 w-16 bg-gray-100 flex items-center justify-center shrink-0 rounded">
-                                {doc.type === "pdf" && <div className="text-red-500 text-xl font-bold">PDF</div>}
-                                {doc.type === "docx" && <div className="text-blue-500 text-xl font-bold">DOC</div>}
-                                {doc.type === "pptx" && <div className="text-orange-500 text-xl font-bold">PPT</div>}
-                                {doc.type === "xlsx" && <div className="text-green-500 text-xl font-bold">XLS</div>}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center">
-                                  <Link href={`/document/${doc.id}`} className="flex-1">
-                                    <h3 className="font-medium truncate hover:text-green-500 transition-colors">
-                                      {doc.title}
-                                    </h3>
-                                  </Link>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="ml-2"
-                                    onClick={() => toggleFavorite(doc.id)}
-                                  >
-                                    {doc.isFavorite ? (
-                                      <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
-                                    ) : (
-                                      <StarOff className="h-5 w-5 text-gray-400" />
-                                    )}
-                                  </Button>
-                                </div>
-                                <p className="text-sm text-gray-500">
-                                  {doc.category} • Đọc gần đây: {doc.lastOpened}
-                                </p>
-                                <div className="flex flex-wrap gap-1 mt-2">
-                                  {doc.tags.map((tag) => (
-                                    <Badge key={tag} variant="outline" className="text-xs">
-                                      {tag}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-                              <div className="flex space-x-2 shrink-0">
-                                <Button variant="outline" size="sm">
-                                  <Eye className="h-4 w-4 mr-1" />
-                                  Xem
-                                </Button>
-                                <Button variant="outline" size="sm">
-                                  <Download className="h-4 w-4 mr-1" />
-                                  Tải xuống
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="text-red-500"
-                                  onClick={() => deleteDocument(doc.id)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                  </div>
-                )}
-
-                {filteredDocuments.filter((doc) => doc.lastOpened).length === 0 && (
-                  <div className="text-center py-12">
-                    <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium mb-2">Không có tài liệu gần đây</h3>
-                    <p className="text-gray-500">Bạn chưa đọc tài liệu nào gần đây.</p>
-                  </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="favorites">
-                {viewMode === "grid" ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredDocuments
-                      .filter((doc) => doc.isFavorite)
-                      .map((doc) => (
-                        <Card key={doc.id} className="overflow-hidden">
-                          <CardContent className="p-0">
-                            <div className="relative h-40 w-full bg-gray-100 flex items-center justify-center">
-                              {doc.type === "pdf" && <div className="text-red-500 text-4xl font-bold">PDF</div>}
-                              {doc.type === "docx" && <div className="text-blue-500 text-4xl font-bold">DOC</div>}
-                              {doc.type === "pptx" && <div className="text-orange-500 text-4xl font-bold">PPT</div>}
-                              {doc.type === "xlsx" && <div className="text-green-500 text-4xl font-bold">XLS</div>}
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="absolute top-2 right-2"
-                                onClick={() => toggleFavorite(doc.id)}
-                              >
-                                {doc.isFavorite ? (
-                                  <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
-                                ) : (
-                                  <StarOff className="h-5 w-5 text-gray-400" />
-                                )}
-                              </Button>
-                            </div>
-                            <div className="p-4">
-                              <Link href={`/document/${doc.id}`}>
-                                <h3 className="font-medium line-clamp-2 hover:text-green-500 transition-colors">
-                                  {doc.title}
-                                </h3>
-                              </Link>
-                              <p className="text-sm text-gray-500 mt-1">
-                                {doc.category} • Thêm ngày: {doc.addedDate}
-                              </p>
-                              <div className="flex flex-wrap gap-1 mt-2">
-                                {doc.tags.map((tag) => (
-                                  <Badge key={tag} variant="outline" className="text-xs">
-                                    {tag}
-                                  </Badge>
-                                ))}
-                              </div>
-                              <div className="flex justify-between mt-4">
-                                <Button variant="outline" size="sm">
-                                  <Eye className="h-4 w-4 mr-1" />
-                                  Xem
-                                </Button>
-                                <Button variant="outline" size="sm">
-                                  <Download className="h-4 w-4 mr-1" />
-                                  Tải xuống
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="text-red-500"
-                                  onClick={() => deleteDocument(doc.id)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {filteredDocuments
-                      .filter((doc) => doc.isFavorite)
-                      .map((doc) => (
-                        <Card key={doc.id}>
-                          <CardContent className="p-4">
-                            <div className="flex items-center space-x-4">
-                              <div className="h-16 w-16 bg-gray-100 flex items-center justify-center shrink-0 rounded">
-                                {doc.type === "pdf" && <div className="text-red-500 text-xl font-bold">PDF</div>}
-                                {doc.type === "docx" && <div className="text-blue-500 text-xl font-bold">DOC</div>}
-                                {doc.type === "pptx" && <div className="text-orange-500 text-xl font-bold">PPT</div>}
-                                {doc.type === "xlsx" && <div className="text-green-500 text-xl font-bold">XLS</div>}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center">
-                                  <Link href={`/document/${doc.id}`} className="flex-1">
-                                    <h3 className="font-medium truncate hover:text-green-500 transition-colors">
-                                      {doc.title}
-                                    </h3>
-                                  </Link>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="ml-2"
-                                    onClick={() => toggleFavorite(doc.id)}
-                                  >
-                                    {doc.isFavorite ? (
-                                      <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
-                                    ) : (
-                                      <StarOff className="h-5 w-5 text-gray-400" />
-                                    )}
-                                  </Button>
-                                </div>
-                                <p className="text-sm text-gray-500">
-                                  {doc.category} • Thêm ngày: {doc.addedDate}
-                                </p>
-                                <div className="flex flex-wrap gap-1 mt-2">
-                                  {doc.tags.map((tag) => (
-                                    <Badge key={tag} variant="outline" className="text-xs">
-                                      {tag}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-                              <div className="flex space-x-2 shrink-0">
-                                <Button variant="outline" size="sm">
-                                  <Eye className="h-4 w-4 mr-1" />
-                                  Xem
-                                </Button>
-                                <Button variant="outline" size="sm">
-                                  <Download className="h-4 w-4 mr-1" />
-                                  Tải xuống
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="text-red-500"
-                                  onClick={() => deleteDocument(doc.id)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                  </div>
-                )}
-
-                {filteredDocuments.filter((doc) => doc.isFavorite).length === 0 && (
-                  <div className="text-center py-12">
-                    <Star className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium mb-2">Không có tài liệu yêu thích</h3>
-                    <p className="text-gray-500">
-                      Bạn chưa đánh dấu tài liệu nào là yêu thích. Nhấn vào biểu tượng ngôi sao để thêm vào danh sách
-                      yêu thích.
-                    </p>
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
+            ))}
           </div>
+        )}
+
+        {/* Bộ lọc và tìm kiếm */}
+        <div className="flex gap-4 mb-6">
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <Input
+                placeholder="Tìm kiếm tài liệu..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+          <Button variant="outline" onClick={() => setIsFilterOpen(!isFilterOpen)}>
+            <Filter className="h-4 w-4 mr-2" />
+            Bộ lọc
+          </Button>
+        </div>
+
+        {/* Bộ lọc chi tiết */}
+        {isFilterOpen && (
+          <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label>Môn học</Label>
+                <select
+                  className="w-full p-2 border rounded-md"
+                  value={selectedSubject || ""}
+                  onChange={(e) => setSelectedSubject(e.target.value || null)}
+                >
+                  <option value="">Tất cả</option>
+                  <option value="Quản trị học">Quản trị học</option>
+                  <option value="Marketing">Marketing</option>
+                  <option value="Kinh tế vĩ mô">Kinh tế vĩ mô</option>
+                </select>
+              </div>
+              <div>
+                <Label>Danh mục</Label>
+                <select
+                  className="w-full p-2 border rounded-md"
+                  value={selectedCategory || ""}
+                  onChange={(e) => setSelectedCategory(e.target.value || null)}
+                >
+                  <option value="">Tất cả</option>
+                  <option value="Luận văn & Báo cáo">Luận văn & Báo cáo</option>
+                  <option value="Đồ án & Nghiên cứu">Đồ án & Nghiên cứu</option>
+                  <option value="Đề thi & Kiểm tra">Đề thi & Kiểm tra</option>
+                </select>
+              </div>
+              <div>
+                <Label>Nhãn</Label>
+                <select
+                  className="w-full p-2 border rounded-md"
+                  value={selectedTag || ""}
+                  onChange={(e) => setSelectedTag(e.target.value || null)}
+                >
+                  <option value="">Tất cả</option>
+                  {customTags.map(tag => (
+                    <option key={tag.id} value={tag.name}>{tag.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Danh sách nhãn tùy chỉnh */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          {customTags.map(tag => (
+            <Badge
+              key={tag.id}
+              style={{ backgroundColor: tag.color }}
+              className="cursor-pointer"
+              onClick={() => setSelectedTag(tag.name)}
+            >
+              {tag.name}
+            </Badge>
+          ))}
+          <Dialog open={showNewTagDialog} onOpenChange={setShowNewTagDialog}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Thêm nhãn
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Tạo nhãn mới</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label>Tên nhãn</Label>
+                  <Input
+                    value={newTagName}
+                    onChange={(e) => setNewTagName(e.target.value)}
+                    placeholder="Nhập tên nhãn..."
+                  />
+                </div>
+                <div>
+                  <Label>Màu sắc</Label>
+                  <Input
+                    type="color"
+                    value={newTagColor}
+                    onChange={(e) => setNewTagColor(e.target.value)}
+                  />
+                </div>
+                <Button onClick={createNewTag}>Tạo nhãn</Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        {/* Hiển thị tài liệu */}
+        <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
+          {filteredDocuments.map(doc => (
+            <Card key={doc.id} className={viewMode === "list" ? "flex" : ""}>
+              <CardContent className={`p-4 ${viewMode === "list" ? "flex gap-4" : ""}`}>
+                <div className={`relative ${viewMode === "list" ? "w-32" : "w-full aspect-[3/4]"}`}>
+                  <Image
+                    src={doc.image}
+                    alt={doc.title}
+                    fill
+                    className="object-cover rounded"
+                  />
+                </div>
+                <div className={viewMode === "list" ? "flex-1" : "mt-4"}>
+                  <h3 className="font-semibold line-clamp-2">{doc.title}</h3>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {doc.tags.map(tag => (
+                      <Badge key={tag} variant="secondary">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-4 mt-4">
+                    <Button variant="ghost" size="sm">
+                      <Eye className="h-4 w-4 mr-2" />
+                      Xem
+                    </Button>
+                    <Button variant="ghost" size="sm">
+                      <Download className="h-4 w-4 mr-2" />
+                      Tải
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setDocuments(docs =>
+                          docs.map(d =>
+                            d.id === doc.id ? { ...d, isFavorite: !d.isFavorite } : d
+                          )
+                        )
+                      }}
+                    >
+                      {doc.isFavorite ? (
+                        <Star className="h-4 w-4 mr-2 text-yellow-500" />
+                      ) : (
+                        <StarOff className="h-4 w-4 mr-2" />
+                      )}
+                      Yêu thích
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
       <Footer />
-    </>
+    </main>
   )
 }
